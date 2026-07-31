@@ -10,6 +10,7 @@ import static android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP_LEFT;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP_RIGHT;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.ui.UiUtils.showAlert;
@@ -34,6 +35,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.webkit.WebView;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.TextView.OnEditorActionListener;
 
 import androidx.annotation.NonNull;
@@ -138,6 +140,14 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	@SuppressWarnings("unchecked")
 	public View findViewById(int i) {
 		return super.findViewById(i);
+	}
+
+	@Override
+	public void setContentView(int layoutResID) {
+		var root = new FrameLayout(this);
+		root.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+		View.inflate(this, layoutResID, root);
+		super.setContentView(root);
 	}
 
 	@NonNull
