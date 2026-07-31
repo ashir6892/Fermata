@@ -10,7 +10,6 @@ import static android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP_LEFT;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP_RIGHT;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.ui.UiUtils.showAlert;
@@ -46,8 +45,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.apps.auto.sdk.CarActivity;
-import com.google.android.apps.auto.sdk.CarUiController;
-
 import me.aap.fermata.R;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
@@ -106,23 +103,6 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	static void initCarActivity(MainCarActivity a) {
 		a.setIgnoreConfigChanges(0xFFFFFFFF);
 		a.getWindow().getDecorView().setSystemUiVisibility(FULLSCREEN_FLAGS);
-		CarUiController ctrl = a.getCarUiController();
-		ctrl.getStatusBarController().hideAppHeader();
-		ctrl.getMenuController().hideMenuButton();
-		try {
-			var m = ctrl.getClass().getDeclaredMethod("getAppLayout");
-			m.setAccessible(true);
-			if (m.invoke(ctrl) instanceof View appLayout) {
-				var lp = appLayout.getLayoutParams();
-				if (lp != null) {
-					lp.width = MATCH_PARENT;
-					lp.height = MATCH_PARENT;
-					appLayout.setLayoutParams(lp);
-				}
-			}
-		} catch (Throwable err) {
-			Log.d(err, "Failed to resize AA app layout");
-		}
 	}
 
 	private MainActivityDelegate onCreate(Bundle state, FermataMediaServiceConnection s) {
