@@ -10,9 +10,11 @@ import static android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP_LEFT;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP_RIGHT;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.ui.UiUtils.showAlert;
+import static me.aap.utils.ui.activity.ActivityDelegate.FULLSCREEN_FLAGS;
 
 import android.content.Context;
 import android.content.Intent;
@@ -101,11 +103,26 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		}
 	}
 
-	static void initCarActivity(CarActivity a) {
+	static void initCarActivity(MainCarActivity a) {
 		a.setIgnoreConfigChanges(0xFFFFFFFF);
+		a.getWindow().getDecorView().setSystemUiVisibility(FULLSCREEN_FLAGS);
 		CarUiController ctrl = a.getCarUiController();
 		ctrl.getStatusBarController().hideAppHeader();
 		ctrl.getMenuController().hideMenuButton();
+		try {
+			var m = ctrl.getClass().getDeclaredMethod("getAppLayout");
+			m.setAccessible(true);
+			if (m.invoke(ctrl) instanceof View appLayout) {
+				var lp = appLayout.getLayoutParams();
+				if (lp != null) {
+					lp.width = MATCH_PARENT;
+					lp.height = MATCH_PARENT;
+					appLayout.setLayoutParams(lp);
+				}
+			}
+		} catch (Throwable err) {
+			Log.d(err, "Failed to resize AA app layout");
+		}
 	}
 
 	private MainActivityDelegate onCreate(Bundle state, FermataMediaServiceConnection s) {
