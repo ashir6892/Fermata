@@ -11,6 +11,8 @@ import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 import static android.view.View.SYSTEM_UI_FLAG_LOW_PROFILE;
 import static android.view.View.SYSTEM_UI_FLAG_VISIBLE;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
@@ -41,6 +43,9 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 
 import androidx.annotation.NonNull;
 
@@ -65,6 +70,8 @@ public class Xposed implements IXposedHookLoadPackage {
 		log("[Fermata] Hooking into package " + pkgName);
 
 		if (AA_PKG.equals(pkgName) || APPLICATION_ID.equals(pkgName)) {
+			if (AA_PKG.equals(pkgName)) hookGearheadLayout();
+
 			if (VERSION.SDK_INT >= VERSION_CODES.R) {
 				findAndHookMethod(InstallSourceInfo.class, "getInitiatingPackageName",
 						new XC_MethodHook() {
@@ -147,6 +154,48 @@ public class Xposed implements IXposedHookLoadPackage {
 				handleIntent(a, intent);
 			}
 		});
+	}
+
+	private static void hookGearheadLayout() {
+		findAndHookMethod(View.class, "setLayoutParams", ViewGroup.LayoutParams.class,
+				new XC_MethodHook() {
+
+					@Override
+					protected void beforeHookedMethod(MethodHookParam param) {
+						var lp = (ViewGroup.LayoutParams) param.args[0];
+						if ((lp == null) || !isHostedAppView((View) param.thisObject)) return;
+
+						if ((lp.width > 0) || (lp.width == WRAP_CONTENT)) lp.width = MATCH_PARENT;
+						if ((lp.height > 0) || (lp.height == WRAP_CONTENT)) lp.height = MATCH_PARENT;
+					}
+				});
+	}
+
+	private static boolean isHostedAppView(View view) {
+		for (var v = view; v != null; ) {
+			if (isHostedAppName(v.getClass().getName())) return true;
+
+			var tag = v.getTag();
+			if ((tag != null) && isHostedAppName(String.valueOf(tag))) return true;
+
+			var id = v.getId();
+			if (id != View.NO_ID) {
+				try {
+					if (isHostedAppName(v.getResources().getResourceEntryName(id))) return true;
+				} catch (Exception ignore) {}
+			}
+
+			ViewParent parent = v.getParent();
+			v = (parent instanceof View) ? (View) parent : null;
+		}
+
+		return false;
+	}
+
+	private static boolean isHostedAppName(String name) {
+		return name.contains("fermata") || name.contains("CarActivity") ||
+				name.contains("car_activity") || name.contains("AppHost") ||
+				name.contains("app_host") || name.contains("Projection");
 	}
 
 	private static void register(Activity a) {
